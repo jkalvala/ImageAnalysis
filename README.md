@@ -3,8 +3,8 @@ This is a batch processing script written in "ImageJ" that takes as inputs sever
 and converts them into binary images using thresholding. The script then calculates the length of the threadlike 
 structures in the image. Also found in this repository is an exmaple of a representative raw image and the thresholded binary image.
 
-##Image Capture
+## Image Capture
 <img width="633" alt="ImageCapture" src="https://user-images.githubusercontent.com/50377837/103464448-96bca080-4ce8-11eb-9328-c1a08e1bf7b3.PNG">
 
-##Image Analysis Algorithm
+## Image Analysis Algorithm
 <img width="549" alt="ImageAnalysisAlgorithm" src="https://user-images.githubusercontent.com/50377837/103464368-0e3e0000-4ce8-11eb-8e04-e05f8f2f8c28.PNG">
