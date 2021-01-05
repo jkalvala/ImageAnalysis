@@ -13,46 +13,37 @@
 // The script expects the deconvolved and separate z-plane images, for each of the following channels: pre-syn channel, post-syn channel and dendritic channel.
 
 
+/////////////Initialization Steps
 // sets white pixels as 255, black as 0
 run("Options...", "iterations=1 count=1 black"); 
 run("Colors...", "foreground=black background=white selection=yellow");
-
 //This runs the script in batch mode.Images will not be displayed, speeding up the computation.
-//setBatchMode(true);      
-
+setBatchMode(true);      
 RandImgNoOfPixels = 1024;
 totImgPixels = RandImgNoOfPixels*RandImgNoOfPixels;
 x_length_in_Micrometers = 51.2;
 y_length_in_Micrometers = 51.2;
-
 //Reporting synaptic density in terms of No. of synapses/100 sq.um dendritic area
 ConversionFactorPixelsToAreaInMicroM = x_length_in_Micrometers*y_length_in_Micrometers/(totImgPixels*100);
-
 //The threshold intensity values for pre- and post-synaptic puncta channel are set as the percentage 
 //of overall pixel intensity distribution
 PreSynThreshPerc = 0.45;
 PostSynThreshPerc = 0.45;
-
 run("Set Measurements...", "area mean standard min centroid area_fraction redirect=None decimal=3");
-
 if(isOpen("Channels Tool..."))
 {
 	close("Channels Tool...");	
 }
-
-
 if(isOpen("Results"))
 {
 	selectWindow("Results");
 	run("Close");
 }
-
 if(isOpen("Log"))
 {
    // Clears the log file	
 	print("\\Clear");
 }
-
 while (nImages>0) 
 { 
           selectImage(nImages); 
@@ -60,14 +51,11 @@ while (nImages>0)
 } 
 
 // prompts the user to select the folder to be processed
-dir = getDirectory("Choose a Directory ");      
-	 
+dir = getDirectory("Choose a Directory ");       
 // gives ImageJ a list of all files in the folder to work through
 list = getFileList(dir);   
-
 print(dir);
 print("CompleteFileName,DensityOfSynapsesOnDendriticAreaOrig,DensityOfSynapsesOnDendriticAreaRand,DensityOfSynPerDendriticAreaFinal,SNR");
-
 for (f=0; f<list.length; f++) 
 {	
 	 
@@ -95,12 +83,8 @@ for (f=0; f<list.length; f++)
 		close("RandMaxPostSyn*");
 		close("RandMaxPostSyn*");
 		close("BinaryMaskRandmizedPostSyn*");
-					
 
-
-
-
-// Step1: Creating Maximum Intensity Projections for post-synaptic, pre-synaptic, dendritic channels
+/////////// Step1: Creating Maximum Intensity Projections for post-synaptic, pre-synaptic, dendritic channels
         // 1.1 Post-synaptic channel
       	// File names ending with _ch00.tif correspond to post-synaptic channel images in our example.
       	csOnlyTheCompleteFileName = replace(list[f],"z000_ch00.tif","");
@@ -143,7 +127,7 @@ for (f=0; f<list.length; f++)
   		run("Duplicate...", "title=Extracted_DendChn");
   	
 	
-//STEP2: DENDRITIC CHANNEL - Setting thresholds and creating binary masks
+/////////// STEP2: DENDRITIC CHANNEL - Setting thresholds and creating binary masks
   		
   		//2.1 Creating dendritic mask from thresholded image
   		//Threshold is : Mean pixel intensity value
@@ -167,17 +151,14 @@ for (f=0; f<list.length; f++)
 		run("Dilate");
 		run("Dilate");
 		
-		
 		//Calculating Dendritic Area
 		nBins = 256;
 		selectWindow("BinaryMaskDendrite");
 		getHistogram(values, count, nBins); 
 		DendriticMaskAreaInPixels = count[255];
 		NonDendriticMaskAreaInPixels = parseInt(totImgPixels) - parseInt(DendriticMaskAreaInPixels);
-	
 
-//STEP3: PRE-SYNAPTIC CHANNEL - Creating a thresholded image and then binary masks
-
+/////////// STEP3: PRE-SYNAPTIC CHANNEL - Creating a thresholded image and then binary masks
 				//3.1 Creating multiple copies of the original image for later use.
 				    selectWindow("Extracted_PreSynChn");
 				    run("Duplicate...", "title=Extracted_PreSynChn-1");
@@ -269,10 +250,7 @@ for (f=0; f<list.length; f++)
 					run("Create Mask");
 					rename("BinaryMaskRandmizedPreSyn");
 
-
-
-
-//STEP4: POST-SYNAPTIC CHANNEL - Creating a thresholded image and then binary masks
+/////////// STEP4: POST-SYNAPTIC CHANNEL - Creating a thresholded image and then binary masks
 				//4.1 Creating multiple copies of the original image for later use.
 				    selectWindow("Extracted_PostSynChn");
 				    run("Duplicate...", "title=Extracted_PostSynChn-1");
@@ -362,9 +340,8 @@ for (f=0; f<list.length; f++)
 					run("Enlarge...", "enlarge=2 pixel");
 					run("Create Mask");
 					rename("BinaryMaskRandmizedPostSyn");
-				
 					
-//STEP5: COLOCALIZATION ANALYSIS : Detecting to total number of puncta colocalizations on the dendrites
+/////////// STEP5: COLOCALIZATION ANALYSIS : Detecting to total number of puncta colocalizations on the dendrites
 			
 				if(isOpen("Summary"))
 				{
@@ -397,7 +374,7 @@ for (f=0; f<list.length; f++)
 				close("MaskSynOnDendrites");
 				close("AllSynapses");
 
-//STEP6: COLOCALIZATION ANALYSIS : Detecting number of random chance puncta colocalizations on the dendrites.
+/////////// STEP6: COLOCALIZATION ANALYSIS : Detecting number of random chance puncta colocalizations on the dendrites.
 				//////////////////////////////////////// NOISE CALCULATIONS //////////////////////////////////////////////////////////////////////
 				if(isOpen("Summary"))
 				{
@@ -443,46 +420,46 @@ for (f=0; f<list.length; f++)
 			    close("MaxIntProj*");
 			    close("Result*");
 
-//STEP7: COLOCALIZATION ANALYSIS : Subtracting number of total detections (step5) and number of random chance detections (step6)
+/////////// STEP7: COLOCALIZATION ANALYSIS : Subtracting number of total detections (step5) and number of random chance detections (step6)
 
-		 //1. Number of synapses
-   		    noOfSynAfterCorrections = parseInt(noOfDendSynOrig) - parseInt(noOfDendSynRand);
-
-        //2. Conversion of dendritic area from pixels to sq.mm
-   		    AreaInMicrometerSqOnlyDendritic = DendriticMaskAreaInPixels*ConversionFactorPixelsToAreaInMicroM;
-
- 		//3. Synaptic density per dendritic area
-        // Original images
-	    DensityOfSynapsesOnDendriticAreaOrig = parseInt(noOfDendSynOrig) / parseInt(AreaInMicrometerSqOnlyDendritic);
-	    DensityOfSynapsesOnDendriticAreaOrig = DensityOfSynapsesOnDendriticAreaOrig/2;
-	    // Randomized images
-	    DensityOfSynapsesOnDendriticAreaRand = parseInt(noOfDendSynRand) / parseInt(AreaInMicrometerSqOnlyDendritic);
-	    DensityOfSynapsesOnDendriticAreaRand = DensityOfSynapsesOnDendriticAreaRand/2;
-	    // NoiseCorrected FINAL SYNAPTIC DENSITY
-	    DensityOfSynPerDendriticAreaFinal = parseFloat(DensityOfSynapsesOnDendriticAreaOrig) - parseFloat(DensityOfSynapsesOnDendriticAreaRand);
-	    // SNR
-	    SNR = parseFloat(DensityOfSynPerDendriticAreaFinal) / parseFloat(DensityOfSynapsesOnDendriticAreaRand);
-		print(csOnlyTheCompleteFileName+","+DensityOfSynapsesOnDendriticAreaOrig+","+DensityOfSynapsesOnDendriticAreaRand+","+DensityOfSynPerDendriticAreaFinal+","+SNR);
- 
-	close("Extracted_PreSynChn-1");
-	close("Extracted_PostSynChn-1");
-	close("RandMaxPreSyn");
-	close("RandMaxPostSyn");
-
-	//Displaying Results in a composite image	
-	selectWindow("BinaryMaskDetectedSynapsesOnDendrites");
-	run("16-bit");
-	selectWindow("MAXIMUM_INT_Proj_PreSynChn");
-	run("Enhance Contrast", "saturated=0.35");
-	selectWindow("MAXIMUM_INT_Proj_DendChn");
-	run("Enhance Contrast", "saturated=0.35");
-	selectWindow("MAXIMUM_INT_Proj_PostSynChn");
-	run("Enhance Contrast", "saturated=0.35");
+			 //1. Number of synapses
+	   		    noOfSynAfterCorrections = parseInt(noOfDendSynOrig) - parseInt(noOfDendSynRand);
 	
-	run("Merge Channels...", "c1=MAXIMUM_INT_Proj_PreSynChn c2=MAXIMUM_INT_Proj_DendChn c3=MAXIMUM_INT_Proj_PostSynChn c4=BinaryMaskDetectedSynapsesOnDendrites create keep");
-	Stack.setActiveChannels("1111");
-	run("Channels Tool...");
-	waitForUser("Please look at the Composite Image to check Synapse Detections");
+	        //2. Conversion of dendritic area from pixels to sq.mm
+	   		    AreaInMicrometerSqOnlyDendritic = DendriticMaskAreaInPixels*ConversionFactorPixelsToAreaInMicroM;
+	
+	 		//3. Synaptic density per dendritic area
+	        // Original images
+		    DensityOfSynapsesOnDendriticAreaOrig = parseInt(noOfDendSynOrig) / parseInt(AreaInMicrometerSqOnlyDendritic);
+		    DensityOfSynapsesOnDendriticAreaOrig = DensityOfSynapsesOnDendriticAreaOrig/2;
+		    // Randomized images
+		    DensityOfSynapsesOnDendriticAreaRand = parseInt(noOfDendSynRand) / parseInt(AreaInMicrometerSqOnlyDendritic);
+		    DensityOfSynapsesOnDendriticAreaRand = DensityOfSynapsesOnDendriticAreaRand/2;
+		    // NoiseCorrected FINAL SYNAPTIC DENSITY
+		    DensityOfSynPerDendriticAreaFinal = parseFloat(DensityOfSynapsesOnDendriticAreaOrig) - parseFloat(DensityOfSynapsesOnDendriticAreaRand);
+		    // SNR
+		    SNR = parseFloat(DensityOfSynPerDendriticAreaFinal) / parseFloat(DensityOfSynapsesOnDendriticAreaRand);
+			print(csOnlyTheCompleteFileName+","+DensityOfSynapsesOnDendriticAreaOrig+","+DensityOfSynapsesOnDendriticAreaRand+","+DensityOfSynPerDendriticAreaFinal+","+SNR);
+	 
+		close("Extracted_PreSynChn-1");
+		close("Extracted_PostSynChn-1");
+		close("RandMaxPreSyn");
+		close("RandMaxPostSyn");
+	
+		//Displaying Results in a composite image	
+		selectWindow("BinaryMaskDetectedSynapsesOnDendrites");
+		run("16-bit");
+		selectWindow("MAXIMUM_INT_Proj_PreSynChn");
+		run("Enhance Contrast", "saturated=0.35");
+		selectWindow("MAXIMUM_INT_Proj_DendChn");
+		run("Enhance Contrast", "saturated=0.35");
+		selectWindow("MAXIMUM_INT_Proj_PostSynChn");
+		run("Enhance Contrast", "saturated=0.35");
+		
+		run("Merge Channels...", "c1=MAXIMUM_INT_Proj_PreSynChn c2=MAXIMUM_INT_Proj_DendChn c3=MAXIMUM_INT_Proj_PostSynChn c4=BinaryMaskDetectedSynapsesOnDendrites create keep");
+		Stack.setActiveChannels("1111");
+		run("Channels Tool...");
+		waitForUser("Please look at the Composite Image to check Synapse Detections");
  } //end of if ends with
 
 }// end of for
